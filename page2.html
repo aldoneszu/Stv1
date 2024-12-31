@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starko Hacker</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            padding-top: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            color: red;
+            margin-top: 0;
+        }
+        .form-container {
+            border: 3px solid red;
+            padding: 20px;
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+            background-color: black;
+            margin-top: 30px;
+        }
+        .input {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 16px;
+            color: white;
+            background-color: black;
+            border: 2px solid red;
+            outline: none;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 16px;
+            color: white;
+            background-color: black;
+            border: 2px solid blue;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: blue;
+        }
+        .status {
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const loginStatus = document.getElementById("loginStatus");
+            const subscriptionStatus = document.getElementById("subscriptionStatus");
+
+            loginStatus.innerText = "جارٍ التحقق...";
+            subscriptionStatus.innerText = "";
+
+            try {
+                const headers = {
+                    "Accept": "application/json, text/plain, */*",
+                    "Connection": "keep-alive",
+                    "x-dynatrace": "MT_3_13_3830690492_8-0_a556db1b-4506-43f3-854a-1d2527767923_0_16912_686",
+                    "x-agent-operatingsystem": "V12.0.17.0.QJQMIXM",
+                    "clientId": "xxx",
+                    "x-agent-device": "lime",
+                    "x-agent-version": "2024.10.1",
+                    "x-agent-build": "500",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Host": "mobile.vodafone.com.eg",
+                    "User-Agent": "okhttp/4.9.1",
+                };
+
+                const data = new URLSearchParams({
+                    "grant_type": "password",
+                    "client_secret": "a2ec6fff-0b7f-4aa4-a733-96ceae5c84c3",
+                    "client_id": "my-vodafone-app",
+                    "username": username,
+                    "password": password,
+                });
+
+                const response = await fetch("https://mobile.vodafone.com.eg/auth/realms/vf-realm/protocol/openid-connect/token", {
+                    method: "POST",
+                    headers: headers,
+                    body: data,
+                });
+
+                if (!response.ok) {
+                    loginStatus.innerText = `فشل التحقق: رمز الخطأ ${response.status}`;
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.access_token) {
+                    loginStatus.innerText = "تم التحقق بنجاح!";
+                    subscribeToPromo(result.access_token);
+                } else {
+                    loginStatus.innerText = "فشل التحقق من الرقم أو الباسورد.";
+                }
+            } catch (error) {
+                loginStatus.innerText = "حدث خطأ أثناء التحقق.";
+                console.error(error);
+            }
+        }
+
+        async function subscribeToPromo(access_token) {
+            const subscriptionStatus = document.getElementById("subscriptionStatus");
+            subscriptionStatus.innerText = "جارٍ الاشتراك...";
+
+            try {
+                const headers = {
+                    "Accept": "application/json, text/plain, */*",
+                    "Authorization": `Bearer ${access_token}`,
+                    "x-dynatrace": "MT_3_13_3830690492_8-0_a556db1b-4506-43f3-854a-1d2527767923_0_16912_686",
+                    "x-agent-operatingsystem": "V12.0.17.0.QJQMIXM",
+                    "clientId": "xxx",
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "Host": "mobile.vodafone.com.eg",
+                    "User-Agent": "okhttp/4.9.1",
+                };
+
+                const data = {
+                    "promoId": "2633",
+                    "channelId": "1",
+                    "wlistId": "2553",
+                    "contextualPromoId": "13",
+                    "triggerId": "189",
+                    "param3": "0.5",
+                    "param4": "1",
+                    "param6": "0",
+                    "param1": "5",
+                    "param2": "50",
+                };
+
+                let count = 0;
+                for (let i = 0; i < 6; i++) {
+                    const response = await fetch("https://mobile.vodafone.com.eg/mobile-app/promo/unifiedRedeemPromo?lang=ar", {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(data),
+                    });
+
+                    if (!response.ok) {
+                        subscriptionStatus.innerText = `فشل الاشتراك: رمز الخطأ ${response.status}`;
+                        return;
+                    }
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        count++;
+                        subscriptionStatus.innerText = `تم الاشتراك بنجاح (${count}/6)`;
+                    } else {
+                        subscriptionStatus.innerText = `فشل الاشتراك في المحاولة (${count + 1}/6).`;
+                        break;
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } catch (error) {
+                subscriptionStatus.innerText = "حدث خطأ أثناء الاشتراك.";
+                console.error(error);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>SCRIPT STARKO HACKER</h1>
+    <div class="form-container">
+        <input type="text" id="username" class="input" placeholder="رقم الهاتف">
+        <input type="password" id="password" class="input" placeholder="كلمة المرور">
+        <button class="button" onclick="login()">تفعيل</button>
+        <p id="loginStatus" class="status"></p>
+        <p id="subscriptionStatus" class="status"></p>
+    </div>
+</body>
+</html>
